@@ -1,42 +1,32 @@
+<!-- src/components/GameBoard.vue -->
+<!-- This is the game board component where players can make moves during the game. -->
+
 <template>
-  <div id="game-container"></div>
+  <div>
+    <!-- Display the game board -->
+    <div v-for="(cell, index) in state" :key="index" @click="handleClick(index)">
+      {{ cell }}
+    </div>
+  </div>
 </template>
 
 <script>
-import Phaser from 'phaser'
-
 export default {
   name: 'GameBoard',
-  mounted() {
-    const config = {
-      type: Phaser.AUTO,
-      width: 800,
-      height: 600,
-      scene: {
-        preload: this.preload,
-        create: this.create,
-        update: this.update
-      }
+  props: {
+    state: {
+      type: Object,
+      required: true
     }
-    new Phaser.Game(config)
   },
   methods: {
-    preload() {
-      // Carregar recursos do jogo
-    },
-    create() {
-      // Configurar o jogo
-    },
-    update() {
-      // Atualizar o jogo
+    handleClick(index) {
+      this.$emit('move', { [index]: this.$root.currentPlayer });
     }
   }
-}
+};
 </script>
 
-<style>
-#game-container {
-  width: 100%;
-  height: 100%;
-}
+<style scoped>
+/* Styles for the game board */
 </style>

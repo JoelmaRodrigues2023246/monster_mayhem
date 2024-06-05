@@ -1,3 +1,7 @@
+//  src/views/Home.vue
+// This is the home page where players can choose between single player and multiplayer modes.
+// The multiplayer mode allows players to create a lobby and play with friends.
+
 <template>
   <div class="game-home">
     <h1>Welcome to Monster Mayhem!</h1>
@@ -13,16 +17,15 @@
 <script>
 import { getAuth, signOut } from 'firebase/auth';
 import { useRouter } from 'vue-router';
-import { db } from '../services/firebaseConfig';
-import { collection, addDoc } from 'firebase/firestore';
+import { createLobby } from '../services/firebaseService';
 
-export default {
+export default { 
   name: 'Home',
   setup() {
     const router = useRouter();
     const auth = getAuth();
 
-    const logout = async () => {
+    const logout = async () => { 
       try {
         await signOut(auth);
         router.push('/login');
@@ -31,16 +34,19 @@ export default {
       }
     };
 
-    const createLobby = async () => {
-      const lobbyRef = await addDoc(collection(db, 'lobbies'), {
-        host: auth.currentUser.uid,
-        players: [auth.currentUser.uid],
-        status: 'waiting'
-      });
-      router.push(`/lobby/${lobbyRef.id}`);
+    const handleCreateLobby = async () => {
+      try {
+        const lobbyId = await createLobby();
+        if (lobbyId) {
+          router.push(`/lobby/${lobbyId}`);
+        }
+      } catch (error) {
+        console.error('Error creating lobby:', error);
+        alert('Failed to create lobby: ' + error.message);
+      }
     };
 
-    return { logout, createLobby };
+    return { logout, createLobby: handleCreateLobby }; 
   }
 };
 </script>
