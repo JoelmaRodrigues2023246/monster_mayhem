@@ -3,7 +3,7 @@
 
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { db } from './firebaseConfig';
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, addDoc, doc, updateDoc, arrayUnion, getDoc } from 'firebase/firestore';
 
 // Function to create a lobby
 export const createLobby = async () => {
@@ -25,6 +25,34 @@ export const createLobby = async () => {
     return lobbyRef.id;
   } catch (error) {
     console.error('Failed to create lobby: ', error);
+  }
+};
+
+// Function to join an existing lobby
+export const joinLobby = async (lobbyId) => {
+  const auth = getAuth();
+  const user = auth.currentUser;
+
+  if (!user) {
+    alert('User is not authenticated!');
+    return;
+  }
+
+  try {
+    const lobbyRef = doc(db, 'lobbies', lobbyId);
+    const lobbySnap = await getDoc(lobbyRef);
+
+    if (!lobbySnap.exists()) {
+      throw new Error('Lobby does not exist');
+    }
+
+    await updateDoc(lobbyRef, {
+      players: arrayUnion(user.uid)
+    });
+
+    console.log('Joined lobby with ID: ', lobbyId);
+  } catch (error) {
+    console.error('Failed to join lobby: ', error);
   }
 };
 
