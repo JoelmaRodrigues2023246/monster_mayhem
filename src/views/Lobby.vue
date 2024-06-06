@@ -6,15 +6,15 @@
   <div class="lobby">
     <h1>Lobby</h1>
     <div v-if="lobby">
-      <p>Host: {{ lobby.host }}</p>
+      <p>Host: {{ hostNickname }}</p>
       <p>Players:</p>
       <ul>
-        <li v-for="player in lobby.players" :key="player">{{ player }}</li>
+        <li v-for="(player, index) in playerNicknames" :key="index">{{ player }}</li>
       </ul>
       <p v-if="lobby.players.length < 4">Waiting for more players to join...</p>
       <p v-else>Ready to start the game!</p>
       <button v-if="isHost && lobby.players.length >= 4" @click="startGame">Start Game</button>
-      <button @click="copyLobbyLink">Copy Lobby Link</button>
+      <button @click="copyLobbyLink">Copy Lobby Code</button>
     </div>
     <div v-else>
       <p>Loading lobby...</p>
@@ -28,6 +28,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { db } from '../services/firebaseConfig';
 import { doc, getDoc, updateDoc, arrayUnion, collection, addDoc } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
+import { getUserNicknameById } from '../services/firebaseService';
 
 export default {
   name: 'Lobby',
@@ -38,6 +39,8 @@ export default {
     const lobbyId = route.params.id;
     const lobby = ref(null);
     const isHost = ref(false);
+    const hostNickname = ref('');
+    const playerNicknames = ref([]);
 
     const loadLobby = async () => {
       const lobbyRef = doc(db, 'lobbies', lobbyId);
@@ -49,12 +52,21 @@ export default {
         // Check if the current user is the host
         isHost.value = auth.currentUser.uid === lobby.value.host;
 
+        // Get host nickname
+        hostNickname.value = await getUserNicknameById(lobby.value.host);
+
+        // Get player nicknames
+        playerNicknames.value = await Promise.all(
+          lobby.value.players.map(playerId => getUserNicknameById(playerId))
+        );
+
         // Add the current player to the lobby if not already added
         if (!lobby.value.players.includes(auth.currentUser.uid)) {
           await updateDoc(lobbyRef, {
             players: arrayUnion(auth.currentUser.uid)
           });
           lobby.value.players.push(auth.currentUser.uid);
+          playerNicknames.value.push(await getUserNicknameById(auth.currentUser.uid));
         }
       }
     };
@@ -77,9 +89,8 @@ export default {
     };
 
     const copyLobbyLink = () => {
-      const link = `${window.location.origin}/lobby/${lobbyId}`;
-      navigator.clipboard.writeText(link).then(() => {
-        alert('Lobby link copied to clipboard');
+      navigator.clipboard.writeText(lobbyId).then(() => {
+        alert('Lobby code copied to clipboard');
       });
     };
 
@@ -90,6 +101,8 @@ export default {
     return {
       lobby,
       isHost,
+      hostNickname,
+      playerNicknames,
       startGame,
       copyLobbyLink
     };

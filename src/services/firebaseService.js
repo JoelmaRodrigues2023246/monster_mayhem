@@ -56,6 +56,23 @@ export const joinLobby = async (lobbyId) => {
   }
 };
 
+// Function to get user nickname by ID
+export const getUserNicknameById = async (userId) => {
+  try {
+    const userRef = doc(db, 'users', userId);
+    const userSnap = await getDoc(userRef);
+    if (userSnap.exists()) {
+      return userSnap.data().nickname;
+    } else {
+      console.error('No such user!');
+      return null;
+    }
+  } catch (error) {
+    console.error('Error fetching user nickname:', error);
+    return null;
+  }
+};
+
 // Function to check if the user is authenticated
 export const checkAuth = () => {
   return new Promise((resolve, reject) => {
