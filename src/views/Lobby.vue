@@ -23,12 +23,12 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { db } from '../services/firebaseConfig';
-import { doc, getDoc, updateDoc, arrayUnion, collection, addDoc } from 'firebase/firestore';
+import { doc, onSnapshot, arrayUnion, deleteDoc, addDoc, collection } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
-import { getUserNicknameById } from '../services/firebaseService';
+import { updateLobby, getUserNicknameById } from '../services/firebaseService';
 
 export default {
   name: 'Lobby',
@@ -44,31 +44,34 @@ export default {
 
     const loadLobby = async () => {
       const lobbyRef = doc(db, 'lobbies', lobbyId);
-      const lobbySnap = await getDoc(lobbyRef);
+      onSnapshot(lobbyRef, async (doc) => {
+        if (doc.exists()) {
+          lobby.value = doc.data();
 
-      if (lobbySnap.exists()) {
-        lobby.value = lobbySnap.data();
+          // Check if the current user is the host
+          isHost.value = auth.currentUser.uid === lobby.value.host;
 
-        // Check if the current user is the host
-        isHost.value = auth.currentUser.uid === lobby.value.host;
+          // Get host nickname
+          hostNickname.value = await getUserNicknameById(lobby.value.host);
 
-        // Get host nickname
-        hostNickname.value = await getUserNicknameById(lobby.value.host);
+          // Get player nicknames
+          playerNicknames.value = await Promise.all(lobby.value.players.map(async (playerId) => {
+            return await getUserNicknameById(playerId);
+          }));
 
-        // Get player nicknames
-        playerNicknames.value = await Promise.all(
-          lobby.value.players.map(playerId => getUserNicknameById(playerId))
-        );
-
-        // Add the current player to the lobby if not already added
-        if (!lobby.value.players.includes(auth.currentUser.uid)) {
-          await updateDoc(lobbyRef, {
-            players: arrayUnion(auth.currentUser.uid)
-          });
-          lobby.value.players.push(auth.currentUser.uid);
-          playerNicknames.value.push(await getUserNicknameById(auth.currentUser.uid));
+          // Add the current player to the lobby if not already added
+          if (!lobby.value.players.includes(auth.currentUser.uid)) {
+            await updateLobby(lobbyId, {
+              players: arrayUnion(auth.currentUser.uid)
+            });
+            lobby.value.players.push(auth.currentUser.uid);
+            playerNicknames.value.push(await getUserNicknameById(auth.currentUser.uid));
+          }
+        } else {
+          alert('Lobby does not exist anymore.');
+          router.push('/multiplayer-options');
         }
-      }
+      });
     };
 
     const startGame = async () => {
@@ -79,8 +82,7 @@ export default {
         turn: lobby.value.players[0]
       });
 
-      const lobbyRef = doc(db, 'lobbies', lobbyId);
-      await updateDoc(lobbyRef, {
+      await updateLobby(lobbyId, {
         status: 'in-game',
         gameId: gameRef.id
       });
@@ -89,13 +91,37 @@ export default {
     };
 
     const copyLobbyLink = () => {
-      navigator.clipboard.writeText(lobbyId).then(() => {
-        alert('Lobby code copied to clipboard');
+      const link = lobbyId;
+      navigator.clipboard.writeText(link).then(() => {
+        alert('Lobby link copied to clipboard');
       });
+    };
+
+    const handleBeforeUnload = (event) => {
+      if (isHost.value) {
+        event.preventDefault();
+        event.returnValue = '';
+      }
+    };
+
+    const handleLeaveLobby = async () => {
+      if (isHost.value) {
+        if (confirm('If you leave, the lobby will be deleted and all players will be redirected. Do you want to proceed?')) {
+          await deleteDoc(doc(db, 'lobbies', lobbyId));
+          router.push('/multiplayer-options');
+        }
+      } else {
+        router.push('/multiplayer-options');
+      }
     };
 
     onMounted(() => {
       loadLobby();
+      window.addEventListener('beforeunload', handleBeforeUnload);
+    });
+
+    onBeforeUnmount(() => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
     });
 
     return {
@@ -104,8 +130,25 @@ export default {
       hostNickname,
       playerNicknames,
       startGame,
-      copyLobbyLink
+      copyLobbyLink,
+      handleLeaveLobby
     };
+  },
+  beforeRouteLeave(to, from, next) {
+    const auth = getAuth();
+    const isHost = auth.currentUser && auth.currentUser.uid === this.lobby.host;
+
+    if (isHost) {
+      if (confirm('If you leave, the lobby will be deleted and all players will be redirected. Do you want to proceed?')) {
+        deleteDoc(doc(db, 'lobbies', this.$route.params.id)).then(() => {
+          next();
+        });
+      } else {
+        next(false);
+      }
+    } else {
+      next();
+    }
   }
 };
 </script>

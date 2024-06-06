@@ -1,6 +1,7 @@
 // src/services/firebaseService.js
 // Firebase service functions
 
+// src/services/firebaseService.js
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { db } from './firebaseConfig';
 import { collection, addDoc, doc, updateDoc, arrayUnion, getDoc } from 'firebase/firestore';
@@ -70,6 +71,16 @@ export const getUserNicknameById = async (userId) => {
   } catch (error) {
     console.error('Error fetching user nickname:', error);
     return null;
+  }
+};
+
+// Function to update the lobby
+export const updateLobby = async (lobbyId, data) => {
+  try {
+    const lobbyRef = doc(db, 'lobbies', lobbyId);
+    await updateDoc(lobbyRef, data);
+  } catch (error) {
+    console.error('Failed to update lobby: ', error);
   }
 };
 
