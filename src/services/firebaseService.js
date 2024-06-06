@@ -1,10 +1,9 @@
 // src/services/firebaseService.js
 // Firebase service functions
 
-// src/services/firebaseService.js
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { db } from './firebaseConfig';
-import { collection, addDoc, doc, updateDoc, arrayUnion, getDoc } from 'firebase/firestore';
+import { collection, addDoc, doc, updateDoc, arrayUnion, getDoc, deleteDoc } from 'firebase/firestore';
 
 // Function to create a lobby
 export const createLobby = async () => {
@@ -84,6 +83,34 @@ export const updateLobby = async (lobbyId, data) => {
   }
 };
 
+// Function to save the game state
+export const saveGameState = async (gameId, gameState) => {
+  try {
+    const gameRef = doc(db, 'games', gameId);
+    await updateDoc(gameRef, gameState);
+    console.log('Game state saved successfully.');
+  } catch (error) {
+    console.error('Error saving game state:', error);
+  }
+};
+
+// Function to load the game state
+export const loadGameState = async (gameId) => {
+  try {
+    const gameRef = doc(db, 'games', gameId);
+    const gameSnap = await getDoc(gameRef);
+    if (gameSnap.exists()) {
+      return gameSnap.data();
+    } else {
+      console.error('No such game state!');
+      return null;
+    }
+  } catch (error) {
+    console.error('Error loading game state:', error);
+    return null;
+  }
+};
+
 // Function to check if the user is authenticated
 export const checkAuth = () => {
   return new Promise((resolve, reject) => {
@@ -96,4 +123,15 @@ export const checkAuth = () => {
       }
     });
   });
+};
+
+// Function to delete the lobby
+export const deleteLobby = async (lobbyId) => {
+  try {
+    const lobbyRef = doc(db, 'lobbies', lobbyId);
+    await deleteDoc(lobbyRef);
+    console.log('Lobby deleted successfully.');
+  } catch (error) {
+    console.error('Error deleting lobby:', error);
+  }
 };

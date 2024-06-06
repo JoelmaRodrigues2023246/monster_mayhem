@@ -1,7 +1,3 @@
-<!-- src/views/Lobby.vue -->
-<!-- This is the lobby page where players can see the host and other players in the lobby. -->
-<!-- The host can start the game from this page. -->
-
 <template>
   <div class="lobby">
     <h1>Lobby</h1>
@@ -13,7 +9,7 @@
       </ul>
       <p v-if="lobby.players.length < 4">Waiting for more players to join...</p>
       <p v-else>Ready to start the game!</p>
-      <button v-if="isHost && lobby.players.length >= 4" @click="startGame">Start Game</button>
+      <button v-if="isHost && lobby.players.length === 4" @click="startGame">Start Game</button>
       <button @click="copyLobbyLink">Copy Lobby Code</button>
     </div>
     <div v-else>
@@ -26,7 +22,7 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { db } from '../services/firebaseConfig';
-import { doc, onSnapshot, arrayUnion, deleteDoc, addDoc, collection } from 'firebase/firestore';
+import { doc, onSnapshot, arrayUnion, updateDoc, deleteDoc, addDoc, collection } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { updateLobby, getUserNicknameById } from '../services/firebaseService';
 
@@ -51,13 +47,9 @@ export default {
           // Check if the current user is the host
           isHost.value = auth.currentUser.uid === lobby.value.host;
 
-          // Get host nickname
+          // Fetch nicknames for the host and players
           hostNickname.value = await getUserNicknameById(lobby.value.host);
-
-          // Get player nicknames
-          playerNicknames.value = await Promise.all(lobby.value.players.map(async (playerId) => {
-            return await getUserNicknameById(playerId);
-          }));
+          playerNicknames.value = await Promise.all(lobby.value.players.map(playerId => getUserNicknameById(playerId)));
 
           // Add the current player to the lobby if not already added
           if (!lobby.value.players.includes(auth.currentUser.uid)) {
@@ -74,21 +66,22 @@ export default {
       });
     };
 
+    // Start the game
     const startGame = async () => {
-      const gameRef = await addDoc(collection(db, 'games'), {
-        host: lobby.value.host,
-        players: lobby.value.players,
-        state: {}, // Initial game state
-        turn: lobby.value.players[0]
-      });
+    const gameRef = await addDoc(collection(db, 'games'), {
+      host: lobby.value.host,
+      players: lobby.value.players,
+      state: {}, // Initial game state
+      turn: lobby.value.players[0]
+    });
 
-      await updateLobby(lobbyId, {
-        status: 'in-game',
-        gameId: gameRef.id
-      });
+    await updateDoc(doc(db, 'lobbies', lobbyId), {
+      status: 'in-game',
+      gameId: gameRef.id
+    });
 
-      router.push(`/game/${gameRef.id}`);
-    };
+    router.push(`/game/${gameRef.id}`);
+  };
 
     const copyLobbyLink = () => {
       const link = lobbyId;
@@ -152,6 +145,7 @@ export default {
   }
 };
 </script>
+
 
 <style scoped>
 /* Styles for the lobby page */

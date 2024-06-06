@@ -1,18 +1,19 @@
-/* This file is responsible for routing the user to the correct page based on the URL path. */
-
 // src/router/index.js
+// Router configuration
+
 import { createRouter, createWebHistory } from 'vue-router';
 import { getAuth } from 'firebase/auth';
 import Home from '../views/Home.vue';
 import Lobby from '../views/Lobby.vue';
 import GameSetup from '../views/GameSetup.vue';
 import SinglePlayerGamePlay from '../components/SinglePlayerGamePlay.vue';
-//import MultiPlayerGamePlay from '../components/MultiPlayerGamePlay.vue';
+import MultiPlayerGamePlay from '../components/MultiPlayerGamePlay.vue';
 import Login from '../views/Login.vue';
 import Register from '../views/Register.vue';
 import Welcome from '../views/Welcome.vue';
-import MultiplayerOptions from '../views/MultiplayerOptions.vue';
 import JoinLobby from '../views/JoinLobby.vue';
+import MultiplayerOptions from '../views/MultiplayerOptions.vue';
+import Game from '../views/Game.vue';
 
 const routes = [
   { path: '/', name: 'Welcome', component: Welcome },
@@ -20,10 +21,12 @@ const routes = [
   { path: '/lobby/:id', name: 'Lobby', component: Lobby, meta: { requiresAuth: true } },
   { path: '/setup', name: 'GameSetup', component: GameSetup, meta: { requiresAuth: true } },
   { path: '/singleplayer', name: 'SinglePlayerGamePlay', component: SinglePlayerGamePlay, meta: { requiresAuth: true } },
-  { path: '/multiplayer-options', name: 'MultiplayerOptions', component: MultiplayerOptions, meta: { requiresAuth: true } },
-  { path: '/joinlobby', name: 'JoinLobby', component: JoinLobby, meta: { requiresAuth: true } },
+  { path: '/multiplayer', name: 'MultiPlayerGamePlay', component: MultiPlayerGamePlay, meta: { requiresAuth: true } },
   { path: '/login', name: 'Login', component: Login },
-  { path: '/register', name: 'Register', component: Register }
+  { path: '/register', name: 'Register', component: Register },
+  { path: '/joinlobby', name: 'JoinLobby', component: JoinLobby, meta: { requiresAuth: true } },
+  { path: '/multiplayer-options', name: 'MultiplayerOptions', component: MultiplayerOptions, meta: { requiresAuth: true } },
+  { path: '/game/:id', name: 'Game', component: Game, meta: { requiresAuth: true } }
 ];
 
 const router = createRouter({
