@@ -2,10 +2,10 @@
 <!-- This is the page where players can join a lobby by entering the lobby ID. -->
  
 <template>
-  <div>
-    <h1>Join Lobby</h1>
-    <input v-model="lobbyId" placeholder="Enter Lobby ID" />
-    <button @click="joinLobby">Join Lobby</button>
+  <div class="join-lobby-container">
+    <img src="@/assets/images/logo.png" alt="Monster Mayhem Logo" class="logo">
+    <input v-model="lobbyId" placeholder="Enter Lobby ID" class="input-field" />
+    <button @click="joinLobby" class="join-button">Join Lobby</button>
   </div>
 </template>
 
@@ -33,5 +33,49 @@ export default {
 </script>
 
 <style scoped>
-/* Add any styles you need */
+.join-lobby-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background-image: url('@/assets/images/background_mm - Copy.jpg');
+  background-size: cover;
+  background-position: center;
+  color: white;
+  text-align: center;
+}
+
+.logo {
+  width: 300px;
+  height: auto;
+  margin-bottom: 20px;
+}
+
+.input-field {
+  display: block;
+  width: 80%;
+  margin: 10px auto;
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+  font-size: 1.2em;
+  background: rgba(255, 255, 255, 0.9);
+  color: #333;
+}
+
+.join-button {
+  background-color: #ff7f00;
+  border: none;
+  border-radius: 5px;
+  color: white;
+  font-size: 1.2em;
+  padding: 10px 20px;
+  margin: 10px;
+  cursor: pointer;
+}
+
+.join-button:hover {
+  background-color: #ff5f00;
+}
 </style>

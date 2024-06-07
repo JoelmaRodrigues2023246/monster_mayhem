@@ -4,15 +4,15 @@
 
 <template>
   <div class="game-home">
-    <h1>Welcome to Monster Mayhem!</h1>
+    <img src="@/assets/images/logo.png" alt="Monster Mayhem Logo" class="logo">
     <p>Choose your mode:</p>
     <router-link to="/singleplayer">
-      <button>Single Player</button>
+      <button class="mode-button">Single Player</button>
     </router-link>
     <router-link to="/multiplayer-options">
-      <button>Multiplayer</button>
+      <button class="mode-button">Multiplayer</button>
     </router-link>
-    <button @click="logout">Logout</button>
+    <button @click="logout" class="logout-button">Logout</button>
   </div>
 </template>
 
@@ -42,21 +42,41 @@ export default {
 
 <style scoped>
 .game-home {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background-image: url('@/assets/images/background_mm - Copy.jpg');
+  background-size: cover;
+  background-position: center;
+  color: white;
   text-align: center;
-  margin-top: 50px;
 }
-.game-home h1 {
-  font-size: 2.5em;
+
+.logo {
+  width: 300px;
+  height: auto;
   margin-bottom: 20px;
 }
+
 .game-home p {
   font-size: 1.2em;
   margin-bottom: 20px;
 }
-.game-home button {
-  margin: 10px;
+
+.mode-button, .logout-button {
+  background-color: #ff7f00;
+  border: none;
+  border-radius: 5px;
+  color: white;
+  font-size: 1.2em;
   padding: 10px 20px;
-  font-size: 1em;
+  margin: 10px;
   cursor: pointer;
+}
+
+.mode-button:hover, .logout-button:hover {
+  background-color: #ff5f00;
 }
 </style>

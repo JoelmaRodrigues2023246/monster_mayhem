@@ -2,14 +2,16 @@
 <!-- Redirects to the home page after successful login -->
 
 <template>
-  <div>
-    <h1>Login</h1>
+  <div class="login-container">
+    <img src="@/assets/images/logo.png" alt="Monster Mayhem Logo" class="logo">
     <form @submit.prevent="login">
-      <input type="text" v-model="identifier" placeholder="Email or Nickname" required autocomplete="username" />
-      <input type="password" v-model="password" placeholder="Password" required autocomplete="current-password" />
-      <button type="submit">Login</button>
+      <input type="text" v-model="identifier" placeholder="Email or Nickname" required autocomplete="username" class="input-field" />
+      <input type="password" v-model="password" placeholder="Password" required autocomplete="current-password" class="input-field" />
+      <button type="submit" class="login-button">Login</button>
     </form>
-    <router-link to="/register">Don't have an account? Register</router-link>
+    <router-link to="/register">
+      <button class="register-button">Don't have an account? Register</button>
+    </router-link>
   </div>
 </template>
 
@@ -68,5 +70,50 @@ export default {
 </script>
 
 <style scoped>
-/* Styles for the login page */
+.login-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background-image: url('@/assets/images/background_mm - Copy.jpg');
+  background-size: cover;
+  background-position: center;
+  color: white;
+  text-align: center;
+}
+
+.logo {
+  width: 300px;
+  height: auto;
+  margin-bottom: 20px;
+}
+
+.input-field {
+  display: block;
+  width: 80%;
+  margin: 10px auto;
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+  font-size: 1.2em;
+  background: rgba(255, 255, 255, 0.9);
+  color: #333;
+}
+
+.login-button, .register-button {
+  background-color: #ff7f00;
+  border: none;
+  border-radius: 5px;
+  color: white;
+  font-size: 1.2em;
+  padding: 10px 20px;
+  margin: 10px;
+  cursor: pointer;
+}
+
+.login-button:hover, .register-button:hover {
+  background-color: #ff5f00;
+}
 </style>
+

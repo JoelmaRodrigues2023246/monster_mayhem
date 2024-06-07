@@ -1,9 +1,6 @@
-<!-- src/views/Lobby.vue-->
-<!--This is the Lobby page where players can see the lobby details, players, and start the game.-->
-
 <template>
-  <div class="lobby">
-    <h1>Lobby</h1>
+  <div class="lobby-container">
+    <img src="@/assets/images/logo.png" alt="Monster Mayhem Logo" class="logo">
     <div v-if="lobby">
       <p>Host: {{ hostNickname }}</p>
       <p>Players:</p>
@@ -14,8 +11,8 @@
       </ul>
       <p v-if="lobby.players.length < 4">Waiting for more players to join...</p>
       <p v-else>Ready to start the game!</p>
-      <button v-if="showStartButton" @click="startGame">Start Game</button>
-      <button @click="copyLobbyLink">Copy Lobby Code</button>
+      <button v-if="showStartButton" @click="startGame" class="lobby-button">Start Game</button>
+      <button @click="copyLobbyLink" class="lobby-button">Copy Lobby Code</button>
     </div>
     <div v-else>
       <p>Loading lobby...</p>
@@ -185,3 +182,39 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.lobby-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background-image: url('@/assets/images/background_mm - Copy.jpg');
+  background-size: cover;
+  background-position: center;
+  color: white;
+  text-align: center;
+}
+
+.logo {
+  width: 300px;
+  height: auto;
+  margin-bottom: 20px;
+}
+
+.lobby-button {
+  background-color: #ff7f00;
+  border: none;
+  border-radius: 5px;
+  color: white;
+  font-size: 1.2em;
+  padding: 10px 20px;
+  margin: 10px;
+  cursor: pointer;
+}
+
+.lobby-button:hover {
+  background-color: #ff5f00;
+}
+</style>

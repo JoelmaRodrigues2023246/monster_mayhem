@@ -3,11 +3,11 @@
  
 <template>
   <div class="multiplayer-options">
-    <h1>Choose an option:</h1>
-    <button @click="createLobby">Create Multiplayer Lobby</button>
+    <img src="@/assets/images/logo.png" alt="Monster Mayhem Logo" class="logo">
     <router-link to="/joinlobby">
-      <button>Join Multiplayer Lobby</button>
+      <button class="mode-button">Join Multiplayer Lobby</button>
     </router-link>
+    <button @click="createLobby" class="mode-button">Create Multiplayer Lobby</button>
   </div>
 </template>
 
@@ -37,17 +37,36 @@ export default {
 
 <style scoped>
 .multiplayer-options {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background-image: url('@/assets/images/background_mm - Copy.jpg');
+  background-size: cover;
+  background-position: center;
+  color: white;
   text-align: center;
-  margin-top: 50px;
 }
-.multiplayer-options h1 {
-  font-size: 2.5em;
+
+.logo {
+  width: 300px;
+  height: auto;
   margin-bottom: 20px;
 }
-.multiplayer-options button {
-  margin: 10px;
+
+.mode-button {
+  background-color: #ff7f00;
+  border: none;
+  border-radius: 5px;
+  color: white;
+  font-size: 1.2em;
   padding: 10px 20px;
-  font-size: 1em;
+  margin: 10px;
   cursor: pointer;
+}
+
+.mode-button:hover {
+  background-color: #ff5f00;
 }
 </style>
