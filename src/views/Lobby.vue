@@ -14,9 +14,7 @@
       </ul>
       <p v-if="lobby.players.length < 4">Waiting for more players to join...</p>
       <p v-else>Ready to start the game!</p>
-      <button v-if="showStartButton" @click="startGame">
-        Start Game
-      </button>
+      <button v-if="showStartButton" @click="startGame">Start Game</button>
       <button @click="copyLobbyLink">Copy Lobby Code</button>
     </div>
     <div v-else>
@@ -54,39 +52,6 @@ export default {
     const playerNicknames = ref([]);
     const showStartButton = ref(false);
 
-    const loadLobby = async () => {
-      const lobbyRef = doc(db, "lobbies", lobbyId);
-      onSnapshot(lobbyRef, async (doc) => {
-        if (doc.exists()) {
-          lobby.value = doc.data();
-
-          // Check if the current user is the host
-          isHost.value = auth.currentUser.uid === lobby.value.host;
-
-          // Fetch nicknames for the host and players
-          hostNickname.value = await getUserNicknameById(lobby.value.host);
-          playerNicknames.value = await Promise.all(
-            lobby.value.players.map((playerId) => getUserNicknameById(playerId))
-          );
-
-          // Add the current player to the lobby if not already added
-          if (!lobby.value.players.includes(auth.currentUser.uid)) {
-            await updateLobby(lobbyId, {
-              players: arrayUnion(auth.currentUser.uid),
-            });
-          }
-
-          // Check if ready to start the game
-          showStartButton.value =
-            isHost.value && lobby.value.players.length === 4;
-        } else {
-          alert("Lobby does not exist anymore.");
-          router.push("/multiplayer-options");
-        }
-      });
-    };
-
-    // Start the game
     const startGame = async () => {
       try {
         const gameRef = await addDoc(collection(db, "games"), {
@@ -148,8 +113,39 @@ export default {
     };
 
     onMounted(() => {
-      loadLobby();
-      window.addEventListener("beforeunload", handleBeforeUnload);
+      const lobbyRef = doc(db, "lobbies", lobbyId);
+      onSnapshot(lobbyRef, async (doc) => {
+        if (doc.exists()) {
+          lobby.value = doc.data();
+
+          // Redirects to the game page if the game has already started
+          if (lobby.value.status === "in-game" && lobby.value.gameId) {
+            router.push(`/game/${lobby.value.gameId}`);
+          }
+
+          // Check if the current user is the host
+          isHost.value = auth.currentUser.uid === lobby.value.host;
+
+          // Fetch nicknames for the host and players
+          hostNickname.value = await getUserNicknameById(lobby.value.host);
+          playerNicknames.value = await Promise.all(
+            lobby.value.players.map((playerId) => getUserNicknameById(playerId))
+          );
+
+          // Add the current player to the lobby if not already added
+          if (!lobby.value.players.includes(auth.currentUser.uid)) {
+            await updateLobby(lobbyId, {
+              players: arrayUnion(auth.currentUser.uid),
+            });
+          }
+
+          // Check if ready to start the game
+          showStartButton.value = isHost.value && lobby.value.players.length === 4;
+        } else {
+          alert("Lobby does not exist anymore.");
+          router.push("/multiplayer-options");
+        }
+      });
     });
 
     onBeforeUnmount(() => {
@@ -171,7 +167,7 @@ export default {
     const auth = getAuth();
     const isHost = auth.currentUser && auth.currentUser.uid === this.lobby.host;
 
-    if (isHost) {
+    if (isHost && to.name !== "Game") {
       if (
         confirm(
           "If you leave, the lobby will be deleted. Do you want to proceed?"
