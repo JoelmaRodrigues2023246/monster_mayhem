@@ -1,19 +1,30 @@
-<!-- src/views/Game.vue -->
-<!-- This is the page where the game logic will be implemented. -->
-
 <template>
   <div class="game">
     <h1>Game</h1>
-    <p>Game ID: {{ gameId }}</p>
-    <!-- Game logic -->
+    <p>Player: {{ currentPlayerNickname }}</p>
+    <div v-if="gameData">
+      <div class="board">
+        <div v-for="row in 10" :key="row" class="row">
+          <div v-for="col in 10" :key="col" class="cell">
+            {{ getMonsterAt(row - 1, col - 1) }}
+          </div>
+        </div>
+      </div>
+      <div class="controls">
+        <button @click="addMonster('vampire')">Add Vampire</button>
+        <button @click="addMonster('werewolf')">Add Werewolf</button>
+        <button @click="addMonster('ghost')">Add Ghost</button>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
 import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
-import { db } from '../services/firebaseConfig';
-import { doc, getDoc } from 'firebase/firestore';
+import { db, auth } from '../services/firebaseConfig';
+import { doc, getDoc, onSnapshot, updateDoc } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
 
 export default {
   name: 'Game',
@@ -21,41 +32,120 @@ export default {
     const route = useRoute();
     const gameId = ref(route.params.id);
     const gameData = ref(null);
+    const currentPlayerNickname = ref('');
+    const user = ref(null);
+
+    const getUserNicknameById = async (userId) => {
+      const userRef = doc(db, 'users', userId);
+      const userSnap = await getDoc(userRef);
+      if (userSnap.exists()) {
+        return userSnap.data().nickname;
+      } else {
+        console.error('No such user!');
+        return '';
+      }
+    };
 
     const loadGame = async () => {
+      if (!user.value) return;
       const gameRef = doc(db, 'games', gameId.value);
       const gameSnap = await getDoc(gameRef);
       if (gameSnap.exists()) {
         gameData.value = gameSnap.data();
+
+        // Fetch nickname for the current player
+        currentPlayerNickname.value = await getUserNicknameById(user.value.uid);
       } else {
         console.error('No such game!');
       }
     };
 
     onMounted(() => {
-      loadGame();
+      onAuthStateChanged(auth, (currentUser) => {
+        if (currentUser) {
+          user.value = currentUser;
+          loadGame();
+          const gameRef = doc(db, 'games', gameId.value);
+          onSnapshot(gameRef, (doc) => {
+            if (doc.exists()) {
+              gameData.value = doc.data();
+            }
+          });
+        } else {
+          console.error('User not authenticated');
+        }
+      });
     });
+
+    const getMonsterAt = (row, col) => {
+      if (!gameData.value) return '';
+      for (let player in gameData.value.state.playersData) {
+        const monsters = gameData.value.state.playersData[player].monsters;
+        for (let monster of monsters) {
+          if (monster.position[0] === row && monster.position[1] === col) {
+            return monster.type.charAt(0).toUpperCase(); // Exibe a inicial do monstro
+          }
+        }
+      }
+      return '';
+    };
+
+    const addMonster = async (monsterType) => {
+      if (!gameData.value || !user.value) return;
+      const newState = { ...gameData.value.state };
+      const currentPlayer = newState.turn;
+      if (!newState.playersData[currentPlayer].monsters) {
+        newState.playersData[currentPlayer].monsters = [];
+      }
+      const playerMonsters = newState.playersData[currentPlayer].monsters;
+      playerMonsters.push({ type: monsterType, position: getRandomPositionForPlayer(currentPlayer) });
+      await updateDoc(doc(db, 'games', gameId.value), { state: newState });
+    };
+
+    const getRandomPositionForPlayer = (playerId) => {
+      const side = playerId === 'player1UID' ? 0 : playerId === 'player2UID' ? 9 : playerId === 'player3UID' ? [0, 9] : [9, 0];
+      if (side === 0 || side === 9) {
+        return [side, Math.floor(Math.random() * 10)];
+      } else {
+        return [Math.floor(Math.random() * 10), side];
+      }
+    };
 
     return {
       gameId,
-      gameData
+      gameData,
+      currentPlayerNickname,
+      getMonsterAt,
+      addMonster,
     };
-  }
+  },
 };
 </script>
 
 <style scoped>
-/* Styles for the game page */
 .game {
   text-align: center;
   margin-top: 50px;
 }
-.game h1 {
-  font-size: 2.5em;
-  margin-bottom: 20px;
+.board {
+  display: grid;
+  grid-template-columns: repeat(10, 30px);
+  grid-template-rows: repeat(10, 30px);
+  gap: 1px;
+  margin: 20px auto;
 }
-.game p {
-  font-size: 1.2em;
-  margin-bottom: 20px;
+.cell {
+  width: 30px;
+  height: 30px;
+  border: 1px solid #000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.controls {
+  margin-top: 20px;
+}
+.controls button {
+  margin: 0 5px;
 }
 </style>
