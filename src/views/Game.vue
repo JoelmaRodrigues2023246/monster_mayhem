@@ -2,6 +2,7 @@
   <div class="game">
     <h1>Game</h1>
     <p>Player: {{ currentPlayerNickname }}</p>
+    <p>Current Turn: {{ currentTurnNickname }}</p>
     <div v-if="gameData">
       <div class="board">
         <div v-for="row in 10" :key="row" class="row">
@@ -22,9 +23,10 @@
 <script>
 import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
-import { db, auth } from '../services/firebaseConfig';
+import { db } from '../services/firebaseConfig';
 import { doc, getDoc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from '../services/firebaseConfig';
 
 export default {
   name: 'Game',
@@ -33,49 +35,64 @@ export default {
     const gameId = ref(route.params.id);
     const gameData = ref(null);
     const currentPlayerNickname = ref('');
+    const currentTurnNickname = ref('');
     const user = ref(null);
 
-    const getUserNicknameById = async (userId) => {
-      const userRef = doc(db, 'users', userId);
-      const userSnap = await getDoc(userRef);
-      if (userSnap.exists()) {
-        return userSnap.data().nickname;
-      } else {
-        console.error('No such user!');
-        return '';
-      }
+    const playerColors = {
+      player1UID: 'green',
+      player2UID: 'red',
+      player3UID: 'blue',
+      player4UID: 'yellow',
     };
 
     const loadGame = async () => {
-      if (!user.value) return;
       const gameRef = doc(db, 'games', gameId.value);
       const gameSnap = await getDoc(gameRef);
       if (gameSnap.exists()) {
         gameData.value = gameSnap.data();
-
-        // Fetch nickname for the current player
-        currentPlayerNickname.value = await getUserNicknameById(user.value.uid);
+        updateCurrentTurnNickname();
       } else {
         console.error('No such game!');
       }
     };
 
+    const updateCurrentTurnNickname = async () => {
+      if (gameData.value && gameData.value.turn) {
+        currentTurnNickname.value = await getNicknameById(gameData.value.turn);
+      }
+    };
+
     onMounted(() => {
+      loadGame();
+      const gameRef = doc(db, 'games', gameId.value);
+      onSnapshot(gameRef, (doc) => {
+        if (doc.exists()) {
+          gameData.value = doc.data();
+          console.log("Game Data:", gameData.value);
+          console.log("Turn:", gameData.value.turn);
+          updateCurrentTurnNickname();
+        }
+      });
+
       onAuthStateChanged(auth, (currentUser) => {
         if (currentUser) {
           user.value = currentUser;
-          loadGame();
-          const gameRef = doc(db, 'games', gameId.value);
-          onSnapshot(gameRef, (doc) => {
-            if (doc.exists()) {
-              gameData.value = doc.data();
-            }
+          getNicknameById(currentUser.uid).then((nickname) => {
+            currentPlayerNickname.value = nickname;
           });
-        } else {
-          console.error('User not authenticated');
         }
       });
     });
+
+    const getNicknameById = async (uid) => {
+      const userRef = doc(db, 'users', uid);
+      const userSnap = await getDoc(userRef);
+      if (userSnap.exists()) {
+        return userSnap.data().nickname;
+      } else {
+        return 'Unknown';
+      }
+    };
 
     const getMonsterAt = (row, col) => {
       if (!gameData.value) return '';
@@ -91,7 +108,7 @@ export default {
     };
 
     const addMonster = async (monsterType) => {
-      if (!gameData.value || !user.value) return;
+      if (!gameData.value) return;
       const newState = { ...gameData.value.state };
       const currentPlayer = newState.turn;
       if (!newState.playersData[currentPlayer].monsters) {
@@ -103,6 +120,7 @@ export default {
     };
 
     const getRandomPositionForPlayer = (playerId) => {
+      // Start positions for each player's monsters: how many monsters each player has/where they are placed
       const side = playerId === 'player1UID' ? 0 : playerId === 'player2UID' ? 9 : playerId === 'player3UID' ? [0, 9] : [9, 0];
       if (side === 0 || side === 9) {
         return [side, Math.floor(Math.random() * 10)];
@@ -115,6 +133,8 @@ export default {
       gameId,
       gameData,
       currentPlayerNickname,
+      currentTurnNickname,
+      playerColors,
       getMonsterAt,
       addMonster,
     };
