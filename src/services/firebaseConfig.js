@@ -1,4 +1,6 @@
 // src/services/firebaseConfig.js
+// This file contains the Firebase configuration and exports the app, db, and auth objects.
+
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";

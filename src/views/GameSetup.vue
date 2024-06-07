@@ -1,3 +1,6 @@
+<!--src/views/GameSetup.vue-->
+<!--This is the page where the user can choose between single player and multiplayer game modes.-->
+
 <template>
   <div>
     <h1>Game Setup</h1>
@@ -13,5 +16,5 @@ export default {
 </script>
 
 <style scoped>
-/* Estilos para a configuração do jogo */
+/* Style for the GameSetup component */
 </style>

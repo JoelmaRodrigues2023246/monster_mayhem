@@ -1,3 +1,6 @@
+<!-- This component will be used to add and move monsters in the game -->
+<!-- src/components/GameControls.vue -->
+
 <template>
   <div class="game-controls">
     <button @click="addMonster">Add Monster</button>

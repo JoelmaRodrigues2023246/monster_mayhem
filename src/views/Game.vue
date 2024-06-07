@@ -1,4 +1,6 @@
 <!-- src/views/Game.vue -->
+<!-- This is the page where the game logic will be implemented. -->
+
 <template>
   <div class="game">
     <h1>Game</h1>

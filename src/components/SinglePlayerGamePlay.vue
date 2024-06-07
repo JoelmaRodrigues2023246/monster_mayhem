@@ -1,3 +1,6 @@
+// src/components/SinglePlayerGamePlay.vue
+// This is the SinglePlayerGamePlay component template: it will be used to display the game board, player information, game controls, and player stats for a single player game.
+
 <template>
   <div>
     <PlayerInfo />
@@ -25,5 +28,5 @@ export default {
 </script>
 
 <style scoped>
-/* Estilos para o modo de jogo single player */
+/* Style for the SinglePlayerGamePlay component */
 </style>

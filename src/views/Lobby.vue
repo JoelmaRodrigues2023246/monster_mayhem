@@ -1,3 +1,6 @@
+<!-- src/views/Lobby.vue-->
+<!--This is the Lobby page where players can see the lobby details, players, and start the game.-->
+
 <template>
   <div class="lobby">
     <h1>Lobby</h1>
@@ -5,11 +8,15 @@
       <p>Host: {{ hostNickname }}</p>
       <p>Players:</p>
       <ul>
-        <li v-for="(player, index) in playerNicknames" :key="index">{{ player }}</li>
+        <li v-for="(player, index) in playerNicknames" :key="index">
+          {{ player }}
+        </li>
       </ul>
       <p v-if="lobby.players.length < 4">Waiting for more players to join...</p>
       <p v-else>Ready to start the game!</p>
-      <button v-if="isHost && lobby.players.length === 4" @click="startGame">Start Game</button>
+      <button v-if="showStartButton" @click="startGame">
+        Start Game
+      </button>
       <button @click="copyLobbyLink">Copy Lobby Code</button>
     </div>
     <div v-else>
@@ -19,15 +26,23 @@
 </template>
 
 <script>
-import { ref, onMounted, onBeforeUnmount } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import { db } from '../services/firebaseConfig';
-import { doc, onSnapshot, arrayUnion, updateDoc, deleteDoc, addDoc, collection } from 'firebase/firestore';
-import { getAuth } from 'firebase/auth';
-import { updateLobby, getUserNicknameById } from '../services/firebaseService';
+import { ref, onMounted, onBeforeUnmount } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { db } from "../services/firebaseConfig";
+import {
+  doc,
+  onSnapshot,
+  arrayUnion,
+  updateDoc,
+  deleteDoc,
+  addDoc,
+  collection,
+} from "firebase/firestore";
+import { getAuth } from "firebase/auth";
+import { updateLobby, getUserNicknameById } from "../services/firebaseService";
 
 export default {
-  name: 'Lobby',
+  name: "Lobby",
   setup() {
     const route = useRoute();
     const router = useRouter();
@@ -35,11 +50,12 @@ export default {
     const lobbyId = route.params.id;
     const lobby = ref(null);
     const isHost = ref(false);
-    const hostNickname = ref('');
+    const hostNickname = ref("");
     const playerNicknames = ref([]);
+    const showStartButton = ref(false);
 
     const loadLobby = async () => {
-      const lobbyRef = doc(db, 'lobbies', lobbyId);
+      const lobbyRef = doc(db, "lobbies", lobbyId);
       onSnapshot(lobbyRef, async (doc) => {
         if (doc.exists()) {
           lobby.value = doc.data();
@@ -49,72 +65,95 @@ export default {
 
           // Fetch nicknames for the host and players
           hostNickname.value = await getUserNicknameById(lobby.value.host);
-          playerNicknames.value = await Promise.all(lobby.value.players.map(playerId => getUserNicknameById(playerId)));
+          playerNicknames.value = await Promise.all(
+            lobby.value.players.map((playerId) => getUserNicknameById(playerId))
+          );
 
           // Add the current player to the lobby if not already added
           if (!lobby.value.players.includes(auth.currentUser.uid)) {
             await updateLobby(lobbyId, {
-              players: arrayUnion(auth.currentUser.uid)
+              players: arrayUnion(auth.currentUser.uid),
             });
-            lobby.value.players.push(auth.currentUser.uid);
-            playerNicknames.value.push(await getUserNicknameById(auth.currentUser.uid));
           }
+
+          // Check if ready to start the game
+          showStartButton.value =
+            isHost.value && lobby.value.players.length === 4;
         } else {
-          alert('Lobby does not exist anymore.');
-          router.push('/multiplayer-options');
+          alert("Lobby does not exist anymore.");
+          router.push("/multiplayer-options");
         }
       });
     };
 
     // Start the game
     const startGame = async () => {
-    const gameRef = await addDoc(collection(db, 'games'), {
-      host: lobby.value.host,
-      players: lobby.value.players,
-      state: {}, // Initial game state
-      turn: lobby.value.players[0]
-    });
+      try {
+        const gameRef = await addDoc(collection(db, "games"), {
+          host: lobby.value.host,
+          players: lobby.value.players,
+          state: {}, // Initial game state
+          turn: lobby.value.players[0],
+        });
 
-    await updateDoc(doc(db, 'lobbies', lobbyId), {
-      status: 'in-game',
-      gameId: gameRef.id
-    });
+        await updateLobby(lobbyId, {
+          status: "in-game",
+          gameId: gameRef.id,
+        });
 
-    router.push(`/game/${gameRef.id}`);
-  };
+        // Direct all players to the game page
+        lobby.value.players.forEach(async (playerId) => {
+          const playerRef = doc(db, "users", playerId);
+          await updateDoc(playerRef, {
+            currentGame: gameRef.id,
+          });
+        });
+
+        // Ensure the host is redirected to the game page
+        setTimeout(() => {
+          router.push(`/game/${gameRef.id}`);
+        }, 1000); // Add a slight delay to ensure all updates are propagated
+      } catch (error) {
+        console.error("Error starting game:", error);
+      }
+    };
 
     const copyLobbyLink = () => {
       const link = lobbyId;
       navigator.clipboard.writeText(link).then(() => {
-        alert('Lobby link copied to clipboard');
+        alert("Lobby link copied to clipboard");
       });
     };
 
     const handleBeforeUnload = (event) => {
       if (isHost.value) {
         event.preventDefault();
-        event.returnValue = '';
+        event.returnValue = "";
       }
     };
 
     const handleLeaveLobby = async () => {
       if (isHost.value) {
-        if (confirm('If you leave, the lobby will be deleted and all players will be redirected. Do you want to proceed?')) {
-          await deleteDoc(doc(db, 'lobbies', lobbyId));
-          router.push('/multiplayer-options');
+        if (
+          confirm(
+            "If you leave, the lobby will be deleted. Do you want to proceed?"
+          )
+        ) {
+          await deleteDoc(doc(db, "lobbies", lobbyId));
+          router.push("/multiplayer-options");
         }
       } else {
-        router.push('/multiplayer-options');
+        router.push("/multiplayer-options");
       }
     };
 
     onMounted(() => {
       loadLobby();
-      window.addEventListener('beforeunload', handleBeforeUnload);
+      window.addEventListener("beforeunload", handleBeforeUnload);
     });
 
     onBeforeUnmount(() => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
     });
 
     return {
@@ -122,9 +161,10 @@ export default {
       isHost,
       hostNickname,
       playerNicknames,
+      showStartButton,
       startGame,
       copyLobbyLink,
-      handleLeaveLobby
+      handleLeaveLobby,
     };
   },
   beforeRouteLeave(to, from, next) {
@@ -132,8 +172,12 @@ export default {
     const isHost = auth.currentUser && auth.currentUser.uid === this.lobby.host;
 
     if (isHost) {
-      if (confirm('If you leave, the lobby will be deleted and all players will be redirected. Do you want to proceed?')) {
-        deleteDoc(doc(db, 'lobbies', this.$route.params.id)).then(() => {
+      if (
+        confirm(
+          "If you leave, the lobby will be deleted. Do you want to proceed?"
+        )
+      ) {
+        deleteDoc(doc(db, "lobbies", this.$route.params.id)).then(() => {
           next();
         });
       } else {
@@ -142,37 +186,6 @@ export default {
     } else {
       next();
     }
-  }
+  },
 };
 </script>
-
-
-<style scoped>
-/* Styles for the lobby page */
-.lobby {
-  text-align: center;
-  margin-top: 50px;
-}
-.lobby h1 {
-  font-size: 2.5em;
-  margin-bottom: 20px;
-}
-.lobby p {
-  font-size: 1.2em;
-  margin-bottom: 20px;
-}
-.lobby ul {
-  list-style-type: none;
-  padding: 0;
-}
-.lobby li {
-  font-size: 1em;
-  margin: 10px 0;
-}
-.lobby button {
-  margin: 10px;
-  padding: 10px 20px;
-  font-size: 1em;
-  cursor: pointer;
-}
-</style>

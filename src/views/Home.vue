@@ -2,7 +2,6 @@
 <!-- This is the home page where players can choose between single player and multiplayer modes. -->
 <!-- Players can also logout from this page. -->
 
-<!-- src/views/Home.vue -->
 <template>
   <div class="game-home">
     <h1>Welcome to Monster Mayhem!</h1>

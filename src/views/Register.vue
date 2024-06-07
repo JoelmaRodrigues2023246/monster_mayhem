@@ -1,3 +1,8 @@
+<!-- src/views/Register.vue -->
+<!-- Registration form with email, password, and nickname fields -->
+<!-- Redirects to the home page after successful registration -->
+<!-- Saves the nickname in Firestore -->
+
 <template>
   <div>
     <h1>Register</h1>
@@ -12,6 +17,7 @@
 </template>
 
 <script>
+// Import the necessary functions and objects from Firebase
 import { ref } from 'vue';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';

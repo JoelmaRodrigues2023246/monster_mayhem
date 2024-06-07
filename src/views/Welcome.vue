@@ -1,3 +1,6 @@
+<!-- src/views/Welcome.vue -->
+<!-- This is the welcome page where players can choose between logging in or registering. -->
+
 <template>
   <div>
     <h1>Welcome to Monster Mayhem!</h1>

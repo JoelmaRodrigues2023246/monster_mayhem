@@ -1,6 +1,9 @@
+// This is the PlayerStats component template
+// src/components/PlayerStats.vue
+
 <template>
     <div>
-      <!-- Conteúdo do PlayerStats -->
+      <!-- Content for the PlayerStats component -->
     </div>
   </template>
   
@@ -11,6 +14,5 @@
   </script>
   
   <style scoped>
-  /* Estilos para o PlayerStats */
+  /* Style for the PlayerStats component */
   </style>
-  

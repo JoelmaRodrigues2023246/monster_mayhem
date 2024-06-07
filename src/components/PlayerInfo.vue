@@ -1,6 +1,9 @@
+// This is the PlayerInfo component template
+// src/components/PlayerInfo.vue
+
 <template>
     <div>
-      <!-- Conteúdo do PlayerInfo -->
+      <!-- Content for the PlayerInfo component -->
     </div>
   </template>
   
@@ -11,6 +14,5 @@
   </script>
   
   <style scoped>
-  /* Estilos para o PlayerInfo */
+  /* Styles for the PlayerInfo component */
   </style>
-  
